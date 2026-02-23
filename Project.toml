@@ -1,0 +1,17 @@
+name = "BasinVolumes"
+uuid = "5eaeaa69-2339-4f0b-83bf-0f19e045deca"
+version = "0.1.0"
+authors = ["Praharsh Suryadevara"]
+
+[deps]
+CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+Pigeons = "0eb8d820-af6a-4919-95ae-11206f830c31"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Volumes = "5dc268c4-7dbc-45e8-9d5a-a4858d7b40d1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

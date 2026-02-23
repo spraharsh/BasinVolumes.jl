@@ -1,0 +1,84 @@
+"""
+    solve(prob::BasinVolumeProblem; explorer=nothing, n_burnin=500, kwargs...)
+
+Estimate the volume of a basin of attraction.
+
+Constructs a `Volumes.VolumeProblem` from the basin membership function and delegates
+to `Volumes.jl` for the MCMC volume estimation.
+
+By default, uses a `RandomWalkMH` explorer with step size tuned via a short burn-in
+phase. This is much cheaper than the gradient-based `AutoMALA` default in Volumes.jl,
+since each membership evaluation triggers an ODE solve.
+
+# Keyword Arguments
+- `explorer`: A Pigeons explorer to use. Default: `nothing` (creates a `RandomWalkMH`
+  with burn-in-tuned step size).
+- `n_burnin::Int`: Number of burn-in iterations for step size tuning. Default: `500`.
+  Ignored if `explorer` is provided.
+- All remaining keyword arguments are forwarded to `Volumes.solve`, including:
+  - `n_rounds::Int`: Number of PT adaptation rounds. Default: `10`.
+  - `n_chains::Int`: Number of tempering chains. Default: `10`.
+
+# Returns
+A `Volumes.VolumeSolution` with fields `log_volume`, `volume`, and `pt`.
+"""
+function CommonSolve.solve(prob::BasinVolumeProblem; explorer=nothing, n_burnin::Int=500, kmax_options::NamedTuple=(;), kwargs...)
+    # Cache membership to avoid double ODE solves at intermediate PT temperatures.
+    # Pigeons evaluates both target(x) and reference(x) at the same point;
+    # both call membership(x), so the cache saves one ODE solve per evaluation.
+    membership = CachedMembership(prob.membership, prob.dim)
+    if explorer === nothing
+        baseline_sigma = burnin_step_size(membership, prob.x0; n_burnin=n_burnin)
+        explorer = RandomWalkMH(initial_step_size=baseline_sigma)
+    end
+    vol_prob = VolumeProblem(membership, prob.dim; x0=prob.x0)
+    result = CommonSolve.solve(vol_prob; explorer=explorer, kmax_options=kmax_options, kwargs...)
+    _log_ode_stats(membership, result)
+    return result
+end
+
+function _log_ode_stats(membership::CachedMembership, result)
+    pt = result.pt
+    membership.total_count == 0 && return
+
+    betas = try
+        pt.shared.tempering.schedule.grids
+    catch
+        nothing
+    end
+
+    lines = String[]
+
+    # Per-chain exploration stats (only ODE solves inside step!)
+    if !isempty(membership.solve_counts)
+        chains = sort(collect(keys(membership.solve_counts)))
+        if betas !== nothing
+            sort!(chains, by=c -> get(betas, c, 0.0))
+        end
+        for chain in chains
+            count = membership.solve_counts[chain]
+            t = membership.solve_times[chain]
+            avg_ms = count > 0 ? (t / count) * 1000 : 0.0
+            label = if betas !== nothing && chain <= length(betas)
+                "chain $chain (β=$(round(betas[chain], digits=4)))"
+            else
+                "chain $chain"
+            end
+            push!(lines, "  $label: $count solves, avg $(round(avg_ms, digits=3)) ms")
+        end
+        exploration_solves = sum(values(membership.solve_counts))
+        exploration_time = sum(values(membership.solve_times))
+        push!(lines, "  exploration: $exploration_solves solves, $(round(exploration_time, digits=1)) s")
+    end
+
+    # Total across all phases (burn-in, kmax, exploration, swaps, sample_iid!)
+    avg_ms = membership.total_count > 0 ? (membership.total_time / membership.total_count) * 1000 : 0.0
+    push!(lines, "  total: $(membership.total_count) solves, avg $(round(avg_ms, digits=3)) ms, $(round(membership.total_time, digits=1)) s wall")
+
+    # Stepping stone estimator: log(Z_target / Z_ref) from Pigeons
+    log_ratio = Pigeons.stepping_stone(pt)
+    push!(lines, "  stepping stone log(Z_target/Z_ref): $(round(log_ratio, digits=4))")
+    push!(lines, "  log(volume): $(round(result.log_volume, digits=4)),  volume: $(result.volume)")
+
+    @info "ODE solve statistics\n" * join(lines, "\n")
+end
