@@ -6,8 +6,8 @@ using Pigeons
 using Statistics
 using Volumes
 
-# Track which PT chain is currently evaluating (for ODE stats)
-const _CURRENT_CHAIN = Ref(0)
+_current_chain() = get(task_local_storage(), :_bv_current_chain, 0)
+_set_current_chain!(c::Int) = task_local_storage(:_bv_current_chain, c)
 
 include("problem.jl")
 include("membership.jl")

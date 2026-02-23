@@ -29,7 +29,7 @@ function Pigeons.step!(explorer::RandomWalkMH, replica, shared)
     state = replica.state
     rng = replica.rng
     chain = replica.chain
-    _CURRENT_CHAIN[] = chain
+    _set_current_chain!(chain)
     dim = length(state)
     σ = get(explorer.step_sizes, chain, explorer.initial_step_size)
 
@@ -50,7 +50,7 @@ function Pigeons.step!(explorer::RandomWalkMH, replica, shared)
     end
     # Reset so that ODE solves outside exploration (swaps, AC tracking, sample_iid!)
     # are not misattributed to this chain.
-    _CURRENT_CHAIN[] = 0
+    _set_current_chain!(0)
 end
 
 function Pigeons.adapt_explorer(explorer::RandomWalkMH, reduced_recorders, current_pt, new_tempering)

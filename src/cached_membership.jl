@@ -1,51 +1,57 @@
 """
     CachedMembership(f, dim)
 
-Wrap a membership function with a 1-entry cache to avoid redundant evaluations.
+Wrap a membership function with per-thread independent cache+stats slots.
 
-At intermediate parallel tempering temperatures, Pigeons evaluates both the target
-and reference log potentials at the same point. Both call `membership(x)`, which
-triggers an ODE solve. This wrapper caches the last result so the second call
-at the same point returns immediately.
+Each thread owns exactly one `_CacheSlot` and never touches another thread's slot,
+so there is no shared mutable state and no locking. Stats are aggregated across
+slots only after `solve` returns (single-threaded context).
 
-Also tracks ODE solve statistics (count and wall time) per PT chain via
-the module-level `_CURRENT_CHAIN` ref, which is set by `RandomWalkMH` in `step!`.
+The cache avoids redundant ODE solves when Pigeons evaluates both the target and
+reference log potentials at the same point within a single chain step.
 """
-mutable struct CachedMembership{F}
-    f::F
+mutable struct _CacheSlot
     last_x::Vector{Float64}
     last_result::Bool
     valid::Bool
-    # ODE solve statistics per chain (exploration only, via _CURRENT_CHAIN)
     solve_counts::Dict{Int, Int}
     solve_times::Dict{Int, Float64}
-    # Total ODE solve statistics (all phases: burn-in, kmax, exploration, swaps)
     total_count::Int
     total_time::Float64
 end
 
-CachedMembership(f, dim::Int) = CachedMembership(
-    f, Vector{Float64}(undef, dim), false, false,
+_CacheSlot(dim::Int) = _CacheSlot(
+    Vector{Float64}(undef, dim), false, false,
     Dict{Int, Int}(), Dict{Int, Float64}(),
     0, 0.0
 )
 
+struct CachedMembership{F}
+    f::F
+    slots::Vector{_CacheSlot}
+end
+
+CachedMembership(f, dim::Int) = CachedMembership(
+    f, [_CacheSlot(dim) for _ in 1:Threads.nthreads()]
+)
+
 function (cm::CachedMembership)(x)
-    if cm.valid && length(x) == length(cm.last_x) && x == cm.last_x
-        return cm.last_result
+    slot = cm.slots[Threads.threadid()]
+    if slot.valid && length(x) == length(slot.last_x) && x == slot.last_x
+        return slot.last_result
     end
-    chain = _CURRENT_CHAIN[]
+    chain = _current_chain()
     t0 = time_ns()
     result = cm.f(x)
     elapsed_s = (time_ns() - t0) / 1e9
-    cm.total_count += 1
-    cm.total_time += elapsed_s
+    slot.total_count += 1
+    slot.total_time += elapsed_s
     if chain > 0
-        cm.solve_counts[chain] = get(cm.solve_counts, chain, 0) + 1
-        cm.solve_times[chain] = get(cm.solve_times, chain, 0.0) + elapsed_s
+        slot.solve_counts[chain] = get(slot.solve_counts, chain, 0) + 1
+        slot.solve_times[chain] = get(slot.solve_times, chain, 0.0) + elapsed_s
     end
-    copyto!(resize!(cm.last_x, length(x)), x)
-    cm.last_result = result
-    cm.valid = true
+    copyto!(resize!(slot.last_x, length(x)), x)
+    slot.last_result = result
+    slot.valid = true
     return result
 end

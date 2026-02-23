@@ -41,9 +41,8 @@ function BasinVolumeProblem(
 )
     x_init = x0 === nothing ? zeros(dim) : Vector{Float64}(x0)
     T_max = Float64(T)
-    cb = TerminateSteadyState(ss_abstol, ss_reltol)
-
     membership = function (u0)
+        cb = TerminateSteadyState(ss_abstol, ss_reltol)
         ode_prob = ODEProblem(f, u0, (0.0, T_max), p)
         sol = CommonSolve.solve(ode_prob, alg; save_everystep=false, callback=cb, diffeq...)
         basin_check(sol.u[end])

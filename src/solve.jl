@@ -39,7 +39,22 @@ end
 
 function _log_ode_stats(membership::CachedMembership, result)
     pt = result.pt
-    membership.total_count == 0 && return
+
+    # Aggregate across all thread-local slots (called single-threaded after solve)
+    total_count = sum(s.total_count for s in membership.slots)
+    total_count == 0 && return
+    total_time = sum(s.total_time for s in membership.slots)
+
+    solve_counts = Dict{Int, Int}()
+    solve_times  = Dict{Int, Float64}()
+    for slot in membership.slots
+        for (chain, count) in slot.solve_counts
+            solve_counts[chain] = get(solve_counts, chain, 0) + count
+        end
+        for (chain, t) in slot.solve_times
+            solve_times[chain] = get(solve_times, chain, 0.0) + t
+        end
+    end
 
     betas = try
         pt.shared.tempering.schedule.grids
@@ -50,14 +65,14 @@ function _log_ode_stats(membership::CachedMembership, result)
     lines = String[]
 
     # Per-chain exploration stats (only ODE solves inside step!)
-    if !isempty(membership.solve_counts)
-        chains = sort(collect(keys(membership.solve_counts)))
+    if !isempty(solve_counts)
+        chains = sort(collect(keys(solve_counts)))
         if betas !== nothing
             sort!(chains, by=c -> get(betas, c, 0.0))
         end
         for chain in chains
-            count = membership.solve_counts[chain]
-            t = membership.solve_times[chain]
+            count = solve_counts[chain]
+            t = solve_times[chain]
             avg_ms = count > 0 ? (t / count) * 1000 : 0.0
             label = if betas !== nothing && chain <= length(betas)
                 "chain $chain (β=$(round(betas[chain], digits=4)))"
@@ -66,14 +81,14 @@ function _log_ode_stats(membership::CachedMembership, result)
             end
             push!(lines, "  $label: $count solves, avg $(round(avg_ms, digits=3)) ms")
         end
-        exploration_solves = sum(values(membership.solve_counts))
-        exploration_time = sum(values(membership.solve_times))
+        exploration_solves = sum(values(solve_counts))
+        exploration_time   = sum(values(solve_times))
         push!(lines, "  exploration: $exploration_solves solves, $(round(exploration_time, digits=1)) s")
     end
 
     # Total across all phases (burn-in, kmax, exploration, swaps, sample_iid!)
-    avg_ms = membership.total_count > 0 ? (membership.total_time / membership.total_count) * 1000 : 0.0
-    push!(lines, "  total: $(membership.total_count) solves, avg $(round(avg_ms, digits=3)) ms, $(round(membership.total_time, digits=1)) s wall")
+    avg_ms = total_count > 0 ? (total_time / total_count) * 1000 : 0.0
+    push!(lines, "  total: $total_count solves, avg $(round(avg_ms, digits=3)) ms, $(round(total_time, digits=1)) s wall")
 
     # Stepping stone estimator: log(Z_target / Z_ref) from Pigeons
     log_ratio = Pigeons.stepping_stone(pt)
