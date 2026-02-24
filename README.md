@@ -6,15 +6,15 @@ Estimate basin-of-attraction volumes for dynamical systems using parallel temper
 
 ## How it works
 
-BasinVolumes.jl frames basin volume computation as a **volume estimation problem**. Given a dynamical system with multiple attractors, we want to know: what fraction of initial conditions converge to a particular attractor?
+BasinVolumes.jl statistically estimates volumes of basins of attraction in high dimensions through the Volumes.jl package. It is done with the following approach
 
 The approach:
 
-1. Define a **membership function** `F(x0) -> Bool` that returns `true` if the trajectory starting at `x0` converges to the target basin
+1. Define a **membership function** `F(x0) -> Bool` that returns `true` if the trajectory starting at `x0` belongs to the target basin
 2. The volume of the basin is the volume of the region `{x0 : F(x0) = true}`
 3. Estimate this volume using parallel tempering MCMC (via [Pigeons.jl](https://github.com/Julia-Tempering/Pigeons.jl))
 
-The MCMC scheme constructs a tempered path between a known reference distribution (a truncated Gaussian centered in the basin) and the uniform distribution over the basin. The stepping-stone estimator then recovers the log-volume ratio, giving the basin volume. This machinery lives in the sibling package [Volumes.jl](../Volumes.jl).
+The MCMC scheme constructs a tempered path between a known reference distribution (a truncated Gaussian centered in the basin) and the uniform distribution over the basin. The stepping-stone estimator then recovers the log-volume ratio, giving the basin volume. This machinery lives in the sibling package [Volumes.jl](../Volumes.jl). Note that the Volumes.jl has different performance considerations than BasinVolumes.jl because of the cost of solving an ODE every MC step. The defaults and functions in this library are tailored to that use case
 
 ## Installation
 
@@ -99,7 +99,7 @@ By default, `solve` uses a `RandomWalkMH` explorer with step size tuned via a bu
 BasinVolumes.jl uses `RandomWalkMH` as its explorer for two reasons:
 
 1. **Non-differentiable target.** The membership function is boolean — a point is either in the basin or not. There is no smooth log-density to differentiate, so gradient-based proposals like MALA/HMC cannot be used.
-2. **Expensive evaluations.** Each membership check requires a full ODE integration to steady state. Random walk proposals only need one membership evaluation per step, while gradient-based methods would additionally require differentiating through the ODE solve.
+2. **Expensive evaluations.** Each membership check requires a full ODE integration to steady state. Random walk proposals only need one membership evaluation per step, while SliceSampler like methods would take multiple evaluations.
 
 The step size is adaptively tuned per chain between PT rounds (target acceptance rate: 0.234, the asymptotic optimum for isotropic random walk Metropolis).
 
