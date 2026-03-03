@@ -3,11 +3,11 @@
 
 Estimate the volume of a basin of attraction.
 
-Constructs a `Volumes.VolumeProblem` from the basin membership function and delegates
-to `Volumes.jl` for the MCMC volume estimation.
+Constructs a `VolumeEstimation.VolumeProblem` from the basin membership function and delegates
+to `VolumeEstimation.jl` for the MCMC volume estimation.
 
 By default, uses a `RandomWalkMH` explorer with step size tuned via a short burn-in
-phase. This is much cheaper than the gradient-based `AutoMALA` default in Volumes.jl,
+phase. This is much cheaper than the gradient-based `AutoMALA` default in VolumeEstimation.jl,
 since each membership evaluation triggers an ODE solve.
 
 # Keyword Arguments
@@ -15,12 +15,12 @@ since each membership evaluation triggers an ODE solve.
   with burn-in-tuned step size).
 - `n_burnin::Int`: Number of burn-in iterations for step size tuning. Default: `500`.
   Ignored if `explorer` is provided.
-- All remaining keyword arguments are forwarded to `Volumes.solve`, including:
+- All remaining keyword arguments are forwarded to `VolumeEstimation.solve`, including:
   - `n_rounds::Int`: Number of PT adaptation rounds. Default: `10`.
   - `n_chains::Int`: Number of tempering chains. Default: `10`.
 
 # Returns
-A `Volumes.VolumeSolution` with fields `log_volume`, `volume`, and `pt`.
+A `VolumeEstimation.VolumeSolution` with fields `log_volume`, `volume`, and `pt`.
 """
 function CommonSolve.solve(prob::BasinVolumeProblem; explorer=nothing, n_burnin::Int=500, kmax_options::NamedTuple=(;), kwargs...)
     # Cache membership to avoid double ODE solves at intermediate PT temperatures.

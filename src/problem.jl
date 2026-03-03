@@ -6,7 +6,7 @@ Define a basin volume estimation problem.
 The membership function `membership(x0) -> Bool` should return `true` if the
 trajectory starting at initial condition `x0` converges to the target basin.
 
-This wraps a `Volumes.VolumeProblem` under the hood — see `Volumes.jl` for details
+This wraps a `VolumeEstimation.VolumeProblem` under the hood — see `VolumeEstimation.jl` for details
 on the MCMC volume estimation.
 
 # Arguments

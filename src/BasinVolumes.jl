@@ -4,7 +4,7 @@ using CommonSolve
 using DifferentialEquations
 using Pigeons
 using Statistics
-using Volumes
+using VolumeEstimation
 
 _current_chain() = get(task_local_storage(), :_bv_current_chain, 0)
 _set_current_chain!(c::Int) = task_local_storage(:_bv_current_chain, c)
