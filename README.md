@@ -6,7 +6,7 @@ Estimate basin-of-attraction volumes for dynamical systems using parallel temper
 
 ## How it works
 
-BasinVolumes.jl statistically estimates volumes of basins of attraction in high dimensions through the Volumes.jl package. It is done with the following approach
+BasinVolumes.jl statistically estimates volumes of basins of attraction in high dimensions through the VolumeEstimation.jl package. It is done with the following approach
 
 The approach:
 
@@ -14,15 +14,15 @@ The approach:
 2. The volume of the basin is the volume of the region `{x0 : F(x0) = true}`
 3. Estimate this volume using parallel tempering MCMC (via [Pigeons.jl](https://github.com/Julia-Tempering/Pigeons.jl))
 
-The MCMC scheme constructs a tempered path between a known reference distribution (a truncated Gaussian centered in the basin) and the uniform distribution over the basin. The stepping-stone estimator then recovers the log-volume ratio, giving the basin volume. This machinery lives in the sibling package [Volumes.jl](../Volumes.jl). Note that the Volumes.jl has different performance considerations than BasinVolumes.jl because of the cost of solving an ODE every MC step. The defaults and functions in this library are tailored to that use case
+The MCMC scheme constructs a tempered path between a known reference distribution (a truncated Gaussian centered in the basin) and the uniform distribution over the basin. The stepping-stone estimator then recovers the log-volume ratio, giving the basin volume. This machinery lives in the sibling package [VolumeEstimation.jl](../VolumeEstimation.jl). Note that the VolumeEstimation.jl has different performance considerations than BasinVolumes.jl because of the cost of solving an ODE every MC step. The defaults and functions in this library are tailored to that use case
 
 ## Installation
 
-BasinVolumes.jl depends on [Volumes.jl](../Volumes.jl), a sibling local package. Add both via:
+BasinVolumes.jl depends on [VolumeEstimation.jl](../VolumeEstimation.jl), a sibling local package. Add both via:
 
 ```julia
 using Pkg
-Pkg.develop(path="/path/to/Volumes.jl")
+Pkg.develop(path="/path/to/VolumeEstimation.jl")
 Pkg.develop(path="/path/to/BasinVolumes.jl")
 ```
 
@@ -81,7 +81,7 @@ sol = solve(prob; n_rounds=10, n_chains=10)
 
 ### Solver options
 
-All keyword arguments beyond `explorer` and `n_burnin` are forwarded to `Volumes.solve`:
+All keyword arguments beyond `explorer` and `n_burnin` are forwarded to `VolumeEstimation.solve`:
 
 ```julia
 sol = solve(prob;
@@ -117,7 +117,7 @@ BasinVolumeProblem
     CachedMembership (avoids redundant ODE solves)
            │
            ▼
-    Volumes.VolumeProblem
+    VolumeEstimation.VolumeProblem
            │
            ▼
     Pigeons.jl parallel tempering
@@ -131,7 +131,7 @@ BasinVolumeProblem
 - **`BasinVolumeProblem`** — problem definition, wrapping a membership function + dimension + starting point
 - **`RandomWalkMH`** — Metropolis-Hastings explorer with per-chain adaptive step sizes (target acceptance: 0.234)
 - **`CachedMembership`** — thread-safe caching layer that avoids double ODE solves when Pigeons evaluates both the target and reference distributions at the same point
-- **`Volumes.jl`** — handles the actual volume estimation via parallel tempering and stepping-stone sampling
+- **`VolumeEstimation.jl`** — handles the actual volume estimation via parallel tempering and stepping-stone sampling
 - **`Pigeons.jl`** — the parallel tempering engine
 
 ## Dependencies
@@ -139,4 +139,4 @@ BasinVolumeProblem
 - [CommonSolve.jl](https://github.com/SciML/CommonSolve.jl) — unified `solve()` interface
 - [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl) — ODE integration
 - [Pigeons.jl](https://github.com/Julia-Tempering/Pigeons.jl) — parallel tempering MCMC
-- [Volumes.jl](../Volumes.jl) — volume estimation via tempered sampling
+- [VolumeEstimation.jl](../VolumeEstimation.jl) — volume estimation via tempered sampling
