@@ -10,6 +10,14 @@ Pigeons = "0eb8d820-af6a-4919-95ae-11206f830c31"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 VolumeEstimation = "5dc268c4-7dbc-45e8-9d5a-a4858d7b40d1"
 
+[compat]
+CommonSolve = "0.2"
+DifferentialEquations = "7"
+Pigeons = "0.4"
+Statistics = "1"
+VolumeEstimation = "0.1"
+julia = "1.10"
+
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 

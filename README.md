@@ -6,7 +6,7 @@ Estimate basin-of-attraction volumes for dynamical systems using parallel temper
 
 ## How it works
 
-BasinVolumes.jl statistically estimates volumes of basins of attraction in high dimensions through the VolumeEstimation.jl package. It is done with the following approach
+BasinVolumes.jl statistically estimates volumes of basins of attraction in high dimensions through the [VolumeEstimation.jl](https://github.com/spraharsh/VolumeEstimation.jl) package. It is done with the following approach
 
 The approach:
 
@@ -14,16 +14,13 @@ The approach:
 2. The volume of the basin is the volume of the region `{x0 : F(x0) = true}`
 3. Estimate this volume using parallel tempering MCMC (via [Pigeons.jl](https://github.com/Julia-Tempering/Pigeons.jl))
 
-The MCMC scheme constructs a tempered path between a known reference distribution (a truncated Gaussian centered in the basin) and the uniform distribution over the basin. The stepping-stone estimator then recovers the log-volume ratio, giving the basin volume. This machinery lives in the sibling package [VolumeEstimation.jl](../VolumeEstimation.jl). Note that the VolumeEstimation.jl has different performance considerations than BasinVolumes.jl because of the cost of solving an ODE every MC step. The defaults and functions in this library are tailored to that use case
+The MCMC scheme constructs a tempered path between a known reference distribution (a truncated Gaussian centered in the basin) and the uniform distribution over the basin. The stepping-stone estimator then recovers the log-volume ratio, giving the basin volume. This machinery lives in [VolumeEstimation.jl](https://github.com/spraharsh/VolumeEstimation.jl). Note that VolumeEstimation.jl has different performance considerations than BasinVolumes.jl because of the cost of solving an ODE every MC step. The defaults and functions in this library are tailored to that use case
 
 ## Installation
 
-BasinVolumes.jl depends on [VolumeEstimation.jl](../VolumeEstimation.jl), a sibling local package. Add both via:
-
 ```julia
 using Pkg
-Pkg.develop(path="/path/to/VolumeEstimation.jl")
-Pkg.develop(path="/path/to/BasinVolumes.jl")
+Pkg.add("BasinVolumes")
 ```
 
 ## Usage
@@ -139,4 +136,4 @@ BasinVolumeProblem
 - [CommonSolve.jl](https://github.com/SciML/CommonSolve.jl) — unified `solve()` interface
 - [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl) — ODE integration
 - [Pigeons.jl](https://github.com/Julia-Tempering/Pigeons.jl) — parallel tempering MCMC
-- [VolumeEstimation.jl](../VolumeEstimation.jl) — volume estimation via tempered sampling
+- [VolumeEstimation.jl](https://github.com/spraharsh/VolumeEstimation.jl) — volume estimation via tempered sampling
