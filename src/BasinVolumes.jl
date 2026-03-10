@@ -1,7 +1,8 @@
 module BasinVolumes
 
 using CommonSolve
-using DifferentialEquations
+using DiffEqCallbacks
+using OrdinaryDiffEqVerner
 using Pigeons
 using Statistics
 using VolumeEstimation

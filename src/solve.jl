@@ -15,6 +15,11 @@ since each membership evaluation triggers an ODE solve.
   with burn-in-tuned step size).
 - `n_burnin::Int`: Number of burn-in iterations for step size tuning. Default: `500`.
   Ignored if `explorer` is provided.
+- `reference`: A Pigeons-compatible reference log potential. Overrides the default
+  isotropic Gaussian reference. Must be used with `log_reference_volume`.
+- `log_reference_volume::Union{Nothing,Float64}`: The known log partition function
+  of the custom reference restricted to the membership region. Required when
+  `reference` is provided.
 - All remaining keyword arguments are forwarded to `VolumeEstimation.solve`, including:
   - `n_rounds::Int`: Number of PT adaptation rounds. Default: `10`.
   - `n_chains::Int`: Number of tempering chains. Default: `10`.
@@ -22,7 +27,7 @@ since each membership evaluation triggers an ODE solve.
 # Returns
 A `VolumeEstimation.VolumeSolution` with fields `log_volume`, `volume`, and `pt`.
 """
-function CommonSolve.solve(prob::BasinVolumeProblem; explorer=nothing, n_burnin::Int=500, kmax_options::NamedTuple=(;), kwargs...)
+function CommonSolve.solve(prob::BasinVolumeProblem; explorer=nothing, n_burnin::Int=500, kmax_options::NamedTuple=(;), reference=nothing, log_reference_volume::Union{Nothing,Float64}=nothing, kwargs...)
     # Cache membership to avoid double ODE solves at intermediate PT temperatures.
     # Pigeons evaluates both target(x) and reference(x) at the same point;
     # both call membership(x), so the cache saves one ODE solve per evaluation.
@@ -32,7 +37,7 @@ function CommonSolve.solve(prob::BasinVolumeProblem; explorer=nothing, n_burnin:
         explorer = RandomWalkMH(initial_step_size=baseline_sigma)
     end
     vol_prob = VolumeProblem(membership, prob.dim; x0=prob.x0)
-    result = CommonSolve.solve(vol_prob; explorer=explorer, kmax_options=kmax_options, kwargs...)
+    result = CommonSolve.solve(vol_prob; explorer=explorer, kmax_options=kmax_options, reference=reference, log_reference_volume=log_reference_volume, kwargs...)
     _log_ode_stats(membership, result)
     return result
 end
