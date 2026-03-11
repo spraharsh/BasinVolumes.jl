@@ -7,7 +7,7 @@ using CommonSolve
         # Unit ball in 2D: area = pi
         membership(x) = sum(abs2, x) <= 1.0
         prob = BasinVolumeProblem(membership, 2)
-        sol = solve(prob; n_rounds=10, n_chains=10)
+        sol = solve(prob; n_rounds=10, n_chains=10, explorer=RandomWalkMH(n_steps=1))
         @test sol.volume > 0
         @test isapprox(sol.volume, pi; rtol=0.5)
     end
@@ -31,7 +31,7 @@ using CommonSolve
 
         prob = BasinVolumeProblem(neg_grad_powsumcos, nothing, basin_check, dim;
             x0=zeros(dim))
-        sol = solve(prob; n_rounds=8, n_chains=8, n_burnin=100, kmax_options=(n_samples=100,), multithreaded=true)
+        sol = solve(prob; n_rounds=8, n_chains=8, n_burnin=100, kmax_options=(n_samples=100,), multithreaded=true, explorer=RandomWalkMH(n_steps=1))
         # Basin volume = 1, so log(volume) should be 0
         @test isapprox(sol.log_volume, 0.0; atol=0.05)
     end
