@@ -1,5 +1,5 @@
 """
-    RandomWalkMH(; initial_step_size=1.0, step_sizes=Dict{Int,Float64}(), n_steps=1, target_acceptance=0.234)
+    RandomWalkMH(; initial_step_size=1.0, step_sizes=Dict{Int,Float64}(), n_steps=20, target_acceptance=0.234)
 
 Random walk Metropolis-Hastings explorer for Pigeons.jl parallel tempering with basin volumes.
 Since Basin volumes involve sampling over a flat distribution, Metropolis hasting is reasonable.
@@ -12,7 +12,7 @@ temperature level gets its own scale.
 # Fields
 - `initial_step_size::Float64`: Baseline step size for chains not yet adapted. Default: `1.0`.
 - `step_sizes::Dict{Int,Float64}`: Per-chain step sizes keyed by chain index.
-- `n_steps::Int`: Number of MH proposals per exploration step. Default: `1` (keep low when
+- `n_steps::Int`: Number of MH proposals per exploration step. Default: `20` (keep low when
   each evaluation is expensive).
 - `target_acceptance::Float64`: Target acceptance rate for adaptation. Default: `0.234`
   (asymptotically optimal for isotropic RWM).
@@ -20,7 +20,7 @@ temperature level gets its own scale.
 Base.@kwdef struct RandomWalkMH
     initial_step_size::Float64 = 1.0
     step_sizes::Dict{Int,Float64} = Dict{Int,Float64}()
-    n_steps::Int = 1
+    n_steps::Int = 20
     target_acceptance::Float64 = 0.234
 end
 
