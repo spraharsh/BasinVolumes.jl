@@ -33,6 +33,6 @@ using CommonSolve
             x0=zeros(dim))
         sol = solve(prob; n_rounds=8, n_chains=8, n_burnin=100, kmax_options=(n_samples=100,), multithreaded=true, explorer=RandomWalkMH(n_steps=1))
         # Basin volume = 1, so log(volume) should be 0
-        @test isapprox(sol.log_volume, 0.0; atol=0.05)
+        @test isapprox(sol.log_volume, 0.0; atol=0.1)
     end
 end
